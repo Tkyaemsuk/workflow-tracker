@@ -75,9 +75,29 @@ function canSeeTask(array $u, array $t): bool {
     if (isGlobal($u)) return true;
     if ((int)$t['created_by'] === (int)$u['id'] || (int)$t['assigned_to'] === (int)$u['id']) return true;
     if (!isLeader($u)) return false;
-    if ($u['role'] === 'HR') return false;
     $assigned = (int)$t['assigned_to'];
     return $assigned > 0 && canAssign($u, $assigned);
+}
+function availableStatuses(array $u, array $t): array {
+    $transitions = [
+        'ได้รับมอบหมาย' => ['กำลังทำ'],
+        'กำลังทำ' => ['ตรวจงาน'],
+        'ตรวจงาน' => ['เสร็จสิ้น', 'กำลังทำ'],
+        'เสร็จสิ้น' => ['กำลังทำ'],
+    ];
+    if (!canSeeTask($u, $t)) return [];
+    $uid = (int)$u['id'];
+    $reviewDecision = in_array($t['status'], ['ตรวจงาน', 'เสร็จสิ้น'], true);
+    if ($reviewDecision) {
+        $allowed = isLeader($u) && (
+            $uid === (int)$t['created_by'] ||
+            isGlobal($u) ||
+            ((int)$t['assigned_to'] > 0 && canAssign($u, (int)$t['assigned_to']))
+        );
+    } else {
+        $allowed = $uid === (int)$t['assigned_to'] || $uid === (int)$t['created_by'] || isGlobal($u);
+    }
+    return $allowed ? ($transitions[$t['status']] ?? []) : [];
 }
 function taskById(int $id): ?array {
     $q = db()->prepare('SELECT * FROM works WHERE id=?'); $q->execute([$id]);
