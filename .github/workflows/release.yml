@@ -1,4 +1,4 @@
-name: 📦 เผยแพร่ WorkFlow Tracker v1.0.0
+name: 📦 เผยแพร่ WorkFlow Tracker v1.0.1
 
 on:
   push:
@@ -35,18 +35,19 @@ jobs:
           find . -name '*.php' -not -path './.git/*' -print0 | while IFS= read -r -d '' file; do
             php -l "$file"
           done
+          node --check assets/app.js
 
       - name: 📦 สร้าง ZIP สำหรับติดตั้ง
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p dist
-          zip -r "dist/workflow-tracker-v1.0.0.zip" \
+          zip -r "dist/workflow-tracker-v1.0.1.zip" \
             index.php api assets config/bootstrap.php config/config.example.php \
             config/.htaccess cron/reminders.php cron/.htaccess \
             database/migration.sql database/.htaccess \
-            .htaccess .gitignore README.md RELEASE_NOTES_TH.md
-          unzip -l "dist/workflow-tracker-v1.0.0.zip"
+            .htaccess .gitignore README.md RELEASE_NOTES_v1.0.1.md
+          unzip -l "dist/workflow-tracker-v1.0.1.zip"
 
       - name: 🚀 สร้าง GitHub Release พร้อมไฟล์ ZIP
         env:
@@ -54,14 +55,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          TAG="v1.0.0"
-          ZIP="dist/workflow-tracker-v1.0.0.zip"
+          TAG="v1.0.1"
+          ZIP="dist/workflow-tracker-v1.0.1.zip"
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" "$ZIP" --clobber
           else
             gh release create "$TAG" "$ZIP" \
               --target "$GITHUB_SHA" \
-              --title "📦 WorkFlow Tracker v1.0.0 — รุ่นเริ่มต้น" \
-              --notes-file RELEASE_NOTES_TH.md \
+              --title "📦 WorkFlow Tracker v1.0.1 — รุ่นปรับปรุงแก้ไขข้อผิดพลาด" \
+              --notes-file RELEASE_NOTES_v1.0.1.md \
               --latest
           fi
