@@ -4,6 +4,10 @@ require dirname(__DIR__) . '/config/bootstrap.php';
 header('X-Content-Type-Options: nosniff');
 try {
     $action = (string)($_GET['action'] ?? $_POST['action'] ?? '');
+    if (in_array($action, ['create_task','update_status','add_comment','read_notifications'], true)
+        && ($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
+        jsonResponse(['ok'=>false,'message'=>'Method not allowed'],405);
+    }
     if ($action === 'login') {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') jsonResponse(['ok'=>false,'message'=>'Method not allowed'],405);
         verifyCsrf();
