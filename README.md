@@ -1,43 +1,57 @@
-# WorkFlow Tracker — PHP + MariaDB
+# 📋 ระบบติดตามสถานะงาน (WorkFlow Tracker)
 
-Responsive task-tracking application using the **existing** database structure in `fr84tvk69sit_fawftracking.sql`. This delivery intentionally does **not** bundle the original SQL dump: that dump contains user accounts, hashes, email addresses and historical data.
+ระบบบริหารจัดการและติดตามสถานะงานสำหรับหน่วยงานและองค์กร พัฒนาด้วย **PHP, MariaDB, jQuery AJAX, SweetAlert2 และ AOS** รองรับคอมพิวเตอร์ แท็บเล็ต และโทรศัพท์มือถือ
 
-## Included
-- Login via original `users.username` or `users.email` and `password_verify()` against existing password hashes.
-- Dashboard: tasks, progress, overdue counts, task list, mobile cards, due-date calendar.
-- Self-created tasks, role-scoped delegation, project link, priority and comments.
-- Task lifecycle `ได้รับมอบหมาย → กำลังทำ → ตรวจงาน → เสร็จสิ้น` with reviewer return.
-- Notification inbox: assigned, comments, status changes, due soon and overdue.
-- SweetAlert2 confirmations/toasts, AOS scroll animation, jQuery AJAX, responsive layout.
-- Original `works`, `projects`, `users`, `departments`, `activity_log`, `status_history` preserved.
+> **รุ่น 1.0.0 — รุ่นเริ่มต้นสำหรับการติดตั้งและทดสอบ**: ยังไม่ได้ผ่านการทดสอบ Production ทุกสภาพแวดล้อม
 
-## Installation on DirectAdmin / Apache + PHP 8.1+ + MariaDB
-1. **Backup the existing production database** first. Do not import the original SQL dump into production a second time.
-2. Import `database/migration.sql` into the **existing** database using phpMyAdmin.
-3. Upload the folder to a document root (for example a subdomain root). Put `config` and `cron` **outside** document root if possible; provided `.htaccess` blocks browser access on Apache.
-4. Copy `config/config.example.php` to `config/config.php`, update database credentials and use a strong random `cron_secret` (unused in CLI mode).
-5. Make sure PHP has `pdo_mysql`, `mbstring`, `openssl`, and session support. Browse to `index.php` and sign in using an existing active user.
-6. Set cron once a day (example at 08:00 Bangkok time): `0 8 * * * /usr/local/bin/php /ABSOLUTE/PATH/cron/reminders.php` (check PHP CLI executable path with hosting provider). The PHP timezone is set to Asia/Bangkok; make sure your crontab time zone matches expected execution time.
-7. Enable HTTPS. Check Console/Network for blocked CDN resources and self-host pinned copies of jQuery, SweetAlert2, AOS and fonts for fully offline operation.
+## ✨ ความสามารถหลัก
+- 🔐 เข้าสู่ระบบด้วยบัญชีผู้ใช้เดิมจากตาราง `users` และตรวจสอบรหัสผ่านด้วย `password_verify()`
+- 📊 แดชบอร์ดแสดงจำนวนงาน งานที่กำลังดำเนินการ งานเสร็จสิ้น และงานเกินกำหนด
+- ➕ เพิ่มงานส่วนบุคคล และมอบหมายงานให้บุคลากรตามระดับสิทธิ์
+- 🔄 เปลี่ยนสถานะงาน: `ได้รับมอบหมาย → กำลังทำ → ตรวจงาน → เสร็จสิ้น`
+- 📅 ปฏิทินกำหนดส่ง พร้อมแจ้งเตือนงานใกล้ครบกำหนดและเกินกำหนด
+- 💬 แสดงความคิดเห็นและรายงานความคืบหน้า
+- 🔔 ระบบแจ้งเตือนภายในเว็บไซต์ด้วย SweetAlert2 ตรวจสอบรายการใหม่ขณะเปิดเว็บไซต์
+- 📱 รองรับการใช้งานบนอุปกรณ์ทุกขนาดหน้าจอ
 
-## Important usage and implementation notes
-- Current `works.due_date` is a **DATE**, so overdue reminders operate by day, **not hour/minute**. To support deadline times, introduce a `DATETIME` field in a future migration.
-- `task_notifications` and `task_comments` are additive tables; existing `notification_log` is retained unchanged for compatibility with other integrations.
-- Employees can create tasks for themselves. Admin/superadmin/CEO can assign to active users; managers can assign within their own department or direct reports; HR to their direct reports. Task visibility includes creators, assignees, and authorized managers/admins.
-- Review approvals require privileged roles (including the creator when privileged). This means employee self-created tasks can be submitted for review but need an authorized manager to approve. Workflows requiring self-approval should be configured separately.
-- While the page is open, the browser polls for notifications every 60 seconds. **SweetAlert2 does not deliver notifications when the page is closed**. Background alerts need email, LINE Messaging API or web push integration.
-- This is an initial deployable version, not a completed production security audit. Before external deployment add rate limits on login, server-side pagination, audit/monitoring and a backup/restore drill.
-- `config/config.php` contains secrets: never commit it to a public repo.
-- `status_history` logs status updates. `activity_log` logs login, logout, task create and status updates.
+## 🛠️ ความต้องการ
+- PHP 8.1 ขึ้นไป พร้อม PDO MySQL และ mbstring
+- MariaDB 10.6 ขึ้นไป หรือ MySQL ที่รองรับตารางที่กำหนด
+- Apache ที่เปิดใช้งาน `.htaccess` และ HTTPS
+- ฐานข้อมูลเดิมที่มี `users`, `works`, `projects`, `departments`, `activity_log`, `status_history`
 
-## File structure
+## 🚀 ขั้นตอนการติดตั้ง
+1. **สำรองฐานข้อมูลเดิมก่อนทุกครั้ง** ไม่ควรนำเข้า SQL Dump เดิมซ้ำ
+2. นำเข้า `database/migration.sql` ผ่าน phpMyAdmin ลงในฐานข้อมูลเดิม เพื่อเพิ่มตารางที่จำเป็นโดยไม่ลบข้อมูลเดิม
+3. อัปโหลดโปรเจกต์ไปยัง Document Root ของ Subdomain หรือเว็บไซต์ที่ต้องการ
+4. คัดลอก `config/config.example.php` เป็น `config/config.php` และกำหนดข้อมูลเชื่อมต่อฐานข้อมูลจริง (**ห้ามเผยแพร่ไฟล์นี้**)
+5. เปิดใช้งาน HTTPS แล้วเข้าสู่ระบบผ่าน `index.php` ด้วยบัญชีผู้ใช้เดิม
+6. ตั้ง Cron Job ให้รัน `cron/reminders.php` ทุกวัน ตัวอย่างเวลา 08:00 น. ตามเขตเวลาของเครื่องเซิร์ฟเวอร์:
+
+```cron
+0 8 * * * /usr/bin/php /ABSOLUTE/PATH/cron/reminders.php
 ```
-index.php
-api/index.php
-assets/style.css
-assets/app.js
-config/bootstrap.php
-config/config.example.php
-cron/reminders.php
-database/migration.sql
+
+โปรดตรวจสอบตำแหน่ง PHP CLI และเขตเวลาเซิร์ฟเวอร์ก่อนใช้งานจริง
+
+## 🔒 ข้อควรระวัง
+- ไม่รวม SQL Dump ที่มีข้อมูลผู้ใช้จริง ประวัติกิจกรรม และ Password Hash
+- เพิ่มตาราง `task_notifications` และ `task_comments` โดยไม่ทับตารางเดิม
+- SweetAlert2 แสดงแจ้งเตือนเฉพาะขณะเปิดเว็บไซต์ การแจ้งเตือนเมื่อปิดเว็บไซต์ต้องพัฒนา Email, LINE Messaging API หรือ Web Push เพิ่มเติม
+- ปัจจุบัน `works.due_date` เป็น `DATE` จึงแจ้งเตือนตาม **วัน** ไม่ใช่ชั่วโมงหรือนาที
+- ก่อนนำไปใช้งานจริงต้องตรวจสอบสิทธิ์ผู้ใช้ เพิ่มมาตรการป้องกันการเดารหัสผ่าน และทดสอบระบบสำรอง/กู้คืนข้อมูล
+
+## 📁 โครงสร้างโปรเจกต์
+```text
+index.php                  หน้าเว็บไซต์หลัก
+api/index.php              API งานและการแจ้งเตือน
+assets/style.css           รูปแบบเว็บไซต์ Responsive
+assets/app.js              JavaScript / AJAX
+config/bootstrap.php       ฐานข้อมูลและการตรวจสอบสิทธิ์
+config/config.example.php  ตัวอย่างการตั้งค่า
+database/migration.sql     ตารางเพิ่มเติม
+cron/reminders.php         งานตรวจสอบกำหนดส่ง
 ```
+
+## 📦 รุ่นเผยแพร่
+ดูรายละเอียดที่ `RELEASE_NOTES_TH.md` และดาวน์โหลด Source Code จาก Repository นี้
