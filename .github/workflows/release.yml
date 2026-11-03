@@ -1,0 +1,67 @@
+name: 📦 เผยแพร่ WorkFlow Tracker v1.0.0
+
+on:
+  push:
+    paths:
+      - '.github/workflows/release.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 ดึงซอร์สโค้ด
+        uses: actions/checkout@v4
+
+      - name: 🔍 ตรวจสอบไฟล์และ PHP Syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f index.php
+          test -f api/index.php
+          test -f assets/style.css
+          test -f assets/app.js
+          test -f config/bootstrap.php
+          test -f config/config.example.php
+          test -f database/migration.sql
+          test -f cron/reminders.php
+          if [ -f config/config.php ] || [ -f .env ]; then
+            echo "::error::ตรวจพบไฟล์กำหนดค่าลับ หยุดการเผยแพร่"
+            exit 1
+          fi
+          find . -name '*.php' -not -path './.git/*' -print0 | while IFS= read -r -d '' file; do
+            php -l "$file"
+          done
+
+      - name: 📦 สร้าง ZIP สำหรับติดตั้ง
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          zip -r "dist/workflow-tracker-v1.0.0.zip" \
+            index.php api assets config/bootstrap.php config/config.example.php \
+            config/.htaccess cron/reminders.php cron/.htaccess \
+            database/migration.sql database/.htaccess \
+            .htaccess .gitignore README.md RELEASE_NOTES_TH.md
+          unzip -l "dist/workflow-tracker-v1.0.0.zip"
+
+      - name: 🚀 สร้าง GitHub Release พร้อมไฟล์ ZIP
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="v1.0.0"
+          ZIP="dist/workflow-tracker-v1.0.0.zip"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$ZIP" --clobber
+          else
+            gh release create "$TAG" "$ZIP" \
+              --target "$GITHUB_SHA" \
+              --title "📦 WorkFlow Tracker v1.0.0 — รุ่นเริ่มต้น" \
+              --notes-file RELEASE_NOTES_TH.md \
+              --latest
+          fi
